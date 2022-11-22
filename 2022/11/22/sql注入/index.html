@@ -48,12 +48,16 @@
 <p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103085442952.png" alt="image-20221103085442952"></p>
 <p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103090522482.png" alt="image-20221103090522482"></p>
 <p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103091041423.png" alt="image-20221103091041423"></p>
-<h3 id="修复建议"><a href="#修复建议" class="headerlink" title="修复建议"></a>修复建议</h3><p>1、参数传值</p>
+<h3 id="修复建议"><a href="#修复建议" class="headerlink" title="修复建议"></a>修复建议</h3><ol>
+<li><strong>参数传值</strong></li>
+</ol>
 <p>程序员在书写SQL语言时，禁止将变量直接写入到SQL语句，必须通过设置相应的参数来传递相关的变量。从而抑制SQL注入。数据输入不能直接嵌入到查询语句中。同时要过滤输入的内容，过滤掉不安全的输入数据。或者采用参数传值的方式传递输入变量，这样可以最大程度防范SQL注入攻击。</p>
-<p>2、基础过滤与二次过滤</p>
+<ol start="2">
+<li><strong>基础过滤与二次过滤</strong></li>
+</ol>
 <p>SQL注入攻击前，入侵者通过修改参数提交and等特殊字符，判断是否存在漏洞，然后通过select、update等各种字符编写SQL注入语句。因此防范SQL注入要对用户输入进行检查，确保数据输入的安全性，在具体检查输入或提交的变量时，对于单引号、双引号、冒号等字符进行转换或者过滤，从而有效防止SQL注入。</p>
 <p>当然危险字符有很多，在获取用户输入提交参数时，首先要进行基础过滤，然后根据程序的功能及用户输入的可能性进行二次过滤，以确保系统的安全性。</p>
-</article><ul class="pager blog-pager"></ul><div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div><script src="//img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"> </script><script>var cloudTieConfig = {
+</article><ul class="pager blog-pager"><li class="previous"><a href="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/" data-toggle="tooltip" data-placement="top" title="Webgoat代码审计之目录遍历">← Previous Post</a></li></ul><div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div><script src="//img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"> </script><script>var cloudTieConfig = {
   url: document.location.href, 
   sourceId: "",
   productKey: "64d7f0abf9224be3bfdcc6cfb9b83fcf",

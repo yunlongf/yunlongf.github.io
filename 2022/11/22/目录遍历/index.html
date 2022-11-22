@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"><meta name="author" content="FuYunlong"><link rel="icon" href="/hexo.jpg"><title>PANGU</title><meta name="description" content=""><link rel="alternate" type="application/rss+xml" title="PANGU" href="/atom.xml"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css"><link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/highlight.css"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"><meta name="generator" content="Hexo 5.4.2"></head><body><nav class="navbar navbar-default navbar-fixed-top navbar-custom"><div class="container-fluid"><div class="navbar-header"><button type="button" data-toggle="collapse" data-target="#main-navbar" class="navbar-toggle"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button><a href="/" class="navbar-brand">PANGU</a></div><div id="main-navbar" class="collapse navbar-collapse"><ul class="nav navbar-nav navbar-right"><li><a href="/archives">Archive</a></li><li><a href="/about/">About</a></li></ul></div><div class="avatar-container"><div class="avatar-img-border"><a href="/"><img src="/hexo.jpg" class="avatar-img"></a></div></div></div></nav><header class="header-section"><div class="intro-header no-img"><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><div class="post-heading"><h1>Webgoat代码审计之目录遍历</h1><p class="post-meta">Posted on Nov 22 2022</p></div></div></div></div></div></header><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><article role="main" class="blog-post"><h3 id="Path-traversal-lesson2"><a href="#Path-traversal-lesson2" class="headerlink" title="Path traversal- lesson2"></a>Path traversal- lesson2</h3><p>这边正常上传一张图片，抓包发现上传到的目录如下。</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221111170821931.png" alt="image-20221111170821931"></p>
+<p>分析一下源代码：发现目标代码主要是利用注解来获取上传表单的 uploadFile 和 fullName 参数中的内容</p>
+<p>然后下面的这行代码规定了我们上传的目录</p>
+<p>/PathTraversal/用户名</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">var</span> <span class="variable">uploadDirectory</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(<span class="built_in">this</span>.webGoatHomeDirectory, <span class="string">&quot;/PathTraversal/&quot;</span> + webSession.getUserName());</span><br></pre></td></tr></table></figure>
+
+<p>继续往下看我们的代码，发现会在上面定义的目录下新创建一个文件夹，主要是以fullname的名字来命名，就是这里也就是没有对fullname传进来的参数进行一个过滤才导致目录穿越</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">uploadDirectory.mkdirs();</span><br><span class="line"><span class="comment">// 创建一个文件夹 文件夹名字为fullname，这里应该对fullname进行一个过滤</span></span><br><span class="line"><span class="type">var</span> <span class="variable">uploadedFile</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(uploadDirectory, fullName);</span><br><span class="line"><span class="comment">// 直接进行文件夹的创建</span></span><br><span class="line">uploadedFile.createNewFile();</span><br><span class="line">FileCopyUtils.copy(file.getBytes(), uploadedFile);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103135609895.png" alt="image-20221103135609895"></p>
+<p>如果在fullname前加上../即可跳转到上一目录</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103135530312.png" alt="image-20221103135530312"></p>
+<p>知道漏洞点在哪里了“我们打断点来更加清晰的查看一下吧，我们正常的结果文件被上传到了/test下</p>
+<p>我们来对fullname进行一个修改我们再来看看结果如何，将我们的fullname修改成 ../test</p>
+<p>发现路径变成如下这样了，所以最终的上传路径就变成了</p>
+<p>/User/Fuyunlong/.webgoat-8.2.1/PathTraversal/admin886/</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103140758768.png" alt="image-20221103140758768"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103140817325.png" alt="image-20221103140817325"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103140855175.png" alt="image-20221103140855175"></p>
+<h3 id="Path-traversal-lesson3"><a href="#Path-traversal-lesson3" class="headerlink" title="Path traversal- lesson3"></a>Path traversal- lesson3</h3><p>这一关与前面不同的是，它将传入的fullname中的../置为空，所以如果直接加../那么将直接被置为空，也就无法完成目录遍历，此时尝试双写…/./<img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103141139691.png" alt="image-20221103141139691"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103141602955.png" alt="image-20221103141602955"></p>
+<p>老规矩，找到源码打断点。</p>
+<p>我们发现刚传入的文件名是…/./</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103142208767.png" alt="image-20221103142208767"></p>
+<p>但是被文件名校验之后就变成了../,成功！</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103142314015.png" alt="image-20221103142314015"></p>
+<h3 id="Path-traversal-lesson4"><a href="#Path-traversal-lesson4" class="headerlink" title="Path traversal- lesson4"></a>Path traversal- lesson4</h3><p>这次换了一个校验通过文件名来进行校验了</p>
+<p>同样的文件名前面加 ../ 就可以绕过了</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103143734748.png" alt="image-20221103143734748"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103143812916.png" alt="image-20221103143812916"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103143936758.png" alt="image-20221103143936758"></p>
+<h3 id="Path-traversal-lesson5"><a href="#Path-traversal-lesson5" class="headerlink" title="Path traversal- lesson5"></a>Path traversal- lesson5</h3><p>看题目的意思目录穿越还会存在在别的地方让我们来通过漏洞来找到jpg文件</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20201108161307271.png" alt="image-20201108161307271"></p>
+<p>我这里直接审计源码做了，点击show randowm cat picture的时候，发现请求了 <code>/PathTraversal/random-picture</code>接口</p>
+<p>直接在IDEA中进行全局搜索 ，找到如下文件</p>
+<p>首先我们看到红框这里，后端代码会对我们传输过来的数值进行一个判断，如果里面包含 <code>..</code> 或者 <code>/</code> 就直接回显不合理的字符串</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103152528474.png" alt="image-20221103152528474"></p>
+<p>尝试之后果然如此</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103152347354.png" alt="image-20221103152347354"></p>
+<p>但是这里有个缺陷，就是是直接获取了我们id的参数数值，众所周知后端在获取参数值之后会进行一次url解码，所以我们可以利用url编码对 <code>../</code>进行一个编码从而绕过检测机制</p>
+<p>利用burp来发送请求</p>
+<p>通过打断点，发现成功绕过</p>
+<p>queryParams 获取到的参数为 %2e%2e%2f</p>
+<p>id 获取到参数会进行一次url解码 <code>../</code></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221103165717903.png" alt="image-20221103165717903"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221104103145339.png" alt="image-20221104103145339"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221104103511159.png" alt="image-20221104103511159"></p>
+<p>但是根据第83行，我们的文件后会加一个 .jpg</p>
+<p>也就是说我们输入url编码后的 <code>../</code> 绕过校验的之后，后端收到的路径是这样的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">../../.jpg</span><br></pre></td></tr></table></figure>
+
+<p>但是这样的路径为什么最后会列出上上层目录的文件名呢？我们来自己看一下是怎么走的</p>
+<p>首先会判断我们id的参数值里面 是否存在 path-traversal-secret.jpg</p>
+<p>然后来到下面一个判断，判断我们的catPicature是否存在，这时候我们的catPicture为</p>
+<p><code>/Users/Fuyunlong/.webgoat-8.2.1/PathTraversal/cat/../../.jpg</code> 是存在的</p>
+<p>然后就会来到return语句，我们来看我们红框框出来的地方，会通过base64编码我们的路径为catPictcure的图片内容，放在返回包中的body中作为内容，但是此时我们的路径是不存在图片的，所以该语句执行失败，来到下面的一个return</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221104103803939.png" alt="image-20221104103803939"></p>
+<p>如下图，如果发现没有发现目标文件，就会获取 catPicature 路径的父文件夹，并且列出所有的文件，在返回包中的body中返回，这也就解释了为什么 路径为什么是 <code>/Users/Fuyunlong/.webgoat-8.2.1/PathTraversal/cat/../../.jpg</code> 这样也能获取上上层文件的文件名</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221115113857247.png" alt="image-20221115113857247"></p>
+<p>所以我们只需要找到path-traversal-secret.jpg位置在哪就可以了，简单尝试之后发现文件并不存在上个文件夹</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221115114046939.png" alt="image-20221115114046939"></p>
+<p>那么就再向上一个目录 ,不出所料发现了我们要的jpg</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221115114149464.png" alt="image-20221115114149464"></p>
+<p>直接获取即可，然后将username加密之后就是flag 提交就行了</p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221105144820238.png" alt="image-20221105144820238"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221105144847721.png" alt="image-20221105144847721"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221105144931190.png" alt="image-20221105144931190"></p>
+<p><img src="/2022/11/22/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/image-20221105145825655.png" alt="image-20221105145825655"></p>
+<h3 id="修复建议"><a href="#修复建议" class="headerlink" title="修复建议"></a>修复建议</h3><ol>
+<li><strong>对传来的参数做过滤</strong></li>
+</ol>
+<p>需对用户提交的内容进行严格的过滤，这里主要指过滤目录跳转符、字符截断符、dir命令等，如“…/”和“~/”。</p>
+<ol start="2">
+<li> <strong>采用白名单的形式，验证所有的输入</strong></li>
+</ol>
+<p>也就是限制用户请求资源，对于少量的文件(例如都是图像)，写正则表达式批量规范请求资源的白名单。</p>
+<ol start="3">
+<li> <strong>文件名参数统一编码，标准化所有字符</strong></li>
+</ol>
+<p>对用户传过来的文件名参数进行统一编码，将所有字符转换成url编码，这样服务器不会解析成../，对包含恶意字符或者空字符的参数进行拒绝。</p>
+<ol start="4">
+<li><strong>id随机数命名，持久化id:path数据库</strong></li>
+</ol>
+<p>文件路径保存至数据库，用户提交文件对应id访问文件，路径识别拼接都在后端。</p>
+<ol start="5">
+<li><strong>下载文件前做权限判断，设置目录权限。</strong></li>
+</ol>
+<p>控制返回数据，保证返回数据不会泄露任何和服务器相关的隐私数据。</p>
+</article><ul class="pager blog-pager"><li class="next"><a href="/2022/11/22/sql%E6%B3%A8%E5%85%A5/" data-toggle="tooltip" data-placement="top" title="Webgoat代码审计之SQL注入">Next Post →</a></li></ul><div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div><script src="//img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"> </script><script>var cloudTieConfig = {
+  url: document.location.href, 
+  sourceId: "",
+  productKey: "64d7f0abf9224be3bfdcc6cfb9b83fcf",
+  target: "cloud-tie-wrapper"
+};</script></div></div></div><footer><div class="container beautiful-jekyll-footer"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><ul class="list-inline text-center footer-links"><li><a title="Weibo"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-weibo"></i></span></a></li><li><a title="GitHub"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-github"></i></span></a></li><li><a title="RSS"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-rss"></i></span></a></li><li><a title="Twitter"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-twitter"></i></span></a></li><li><a title="Email me"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-envelope"></i></span></a></li></ul><p class="copyright text-muted">© FuYunlong • 2022 • <a href="mailto:undefined"></a>
+</p><p class="theme-by text-muted">Theme by
+<a target="_blank" rel="noopener" href="https://github.com/twoyao/beautiful-hexo">beautiful-hexo</a></p></div></div></div></footer><script src="//cdn.bootcss.com/jquery/1.11.2/jquery.min.js"></script><script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/js/main.js"></script><script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script><script>hljs.initHighlightingOnLoad();</script></body></html>
