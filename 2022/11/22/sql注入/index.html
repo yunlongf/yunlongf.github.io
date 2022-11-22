@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"><meta name="author" content="FuYunlong"><link rel="icon" href="/hexo.jpg"><title>PANGU</title><meta name="description" content=""><link rel="alternate" type="application/rss+xml" title="PANGU" href="/atom.xml"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css"><link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/highlight.css"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"><meta name="generator" content="Hexo 5.4.2"></head><body><nav class="navbar navbar-default navbar-fixed-top navbar-custom"><div class="container-fluid"><div class="navbar-header"><button type="button" data-toggle="collapse" data-target="#main-navbar" class="navbar-toggle"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button><a href="/" class="navbar-brand">PANGU</a></div><div id="main-navbar" class="collapse navbar-collapse"><ul class="nav navbar-nav navbar-right"><li><a href="/archives">Archive</a></li><li><a href="/about/">About</a></li></ul></div><div class="avatar-container"><div class="avatar-img-border"><a href="/"><img src="/hexo.jpg" class="avatar-img"></a></div></div></div></nav><header class="header-section"><div class="intro-header no-img"><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><div class="post-heading"><h1>Webgoat代码审计之SQL注入</h1><p class="post-meta">Posted on Nov 22 2022</p></div></div></div></div></div></header><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><article role="main" class="blog-post"><hr>
+<h3 id="SQL注入-intro-lesson-9"><a href="#SQL注入-intro-lesson-9" class="headerlink" title="SQL注入 (intro)lesson-9"></a>SQL注入 (intro)lesson-9</h3><p>​    来到第9关可以看到这里已经构造好了SQL语句，只需要我们选择即可，先随便选择一个发包请求根据请求的接口到源码中进行定位相关代码。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221111161747501.png" alt="image-20221111161747501"></p>
+<p>来到源码后发现这边采用的直接拼接，SQL注入不出意外就有了，打个断点分析一下</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102104707245-16673572322811.png" alt="image-20221102104707245"></p>
+<p>发现我们输入的内容没有经过任何过滤就直接拼接进去了。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102104908923.png" alt="image-20221102104908923"></p>
+<p>SQL语句拼接完成，到此SQL注入成功。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102104941192.png" alt="image-20221102104941192"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102105025491.png" alt="image-20221102105025491"></p>
+<h3 id="SQL注入-intro-lesson-10"><a href="#SQL注入-intro-lesson-10" class="headerlink" title="SQL注入 (intro)lesson-10"></a>SQL注入 (intro)lesson-10</h3><p>第十关依旧是给出了提示的SQL语句，老规矩先随便发个请求，看一下请求的接口方便在源码中定位。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221111161919007.png" alt="image-20221111161919007"></p>
+<p>在源码中定位到这一关，发现login_count使用的是占位符？进行拼接不存在SQL注入，而accountName是直接拼接，不出意外注入点就是accountName了。老样子打断点分析。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102111554444.png" alt="image-20221102111554444"></p>
+<p>SQL语句拼接成功，然后就可以看到我们所有的数据都回显出来了。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102111637126.png" alt="image-20221102111637126"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102110734817.png" alt="image-20221102110734817"></p>
+<h3 id="sql注入-advanced-lesson5"><a href="#sql注入-advanced-lesson5" class="headerlink" title="sql注入(advanced)-lesson5"></a>sql注入(advanced)-lesson5</h3><p>来到这一关首先看到一个登录框，直接请求抓包找接口对应的源码。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221111162500639.png" alt="image-20221111162500639"></p>
+<p>确定源码如下，居然都是用占位符？进行拼接，这还怎么注入，返回这一关重新看。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102112824533.png" alt="image-20221102112824533"></p>
+<p>发现原来还有一个注册功能，我们去看看注册功能，发现在注册的时候进行了参数拼接，直接将username_reg带入到了sql语句，这里在注册的时候会首先将我们输入的用户名进行一个查询，如果查询有结果就会返回user.exists 如果没有的话就会返回user.created。</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221102113602284.png" alt="image-20221102113602284"></p>
+<p>所以我们来看一下我们的SQL注入语句,我们的SQL语句是如下这样的，我们可以通过 &#39; 闭合前面的符号</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;select userid from sql_challenge_users where userid = &#x27;&quot; <span class="operator">+</span> username_reg <span class="operator">+</span> &quot;&#x27;&quot;</span><br></pre></td></tr></table></figure>
+
+<p>例如 ：</p>
+<p>下面是闭合情况，那么我们如果根据回显信息来获取我们需要的tom的密码呢？</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> userid <span class="keyword">from</span> sql_challenge_users <span class="keyword">where</span> userid <span class="operator">=</span><span class="string">&#x27;&#x27;</span> <span class="operator">+</span> <span class="string">&#x27;tom&#x27;</span> <span class="keyword">and</span> <span class="string">&#x27;1&#x27;</span><span class="operator">=</span><span class="string">&#x27;1&#x27;</span> <span class="operator">+</span><span class="string">&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>我们可以采用类似布尔盲注的思路，前提得知已有tom这个账号</p>
+<p><code>tom&#39; and &#39;1&#39;=&#39;2</code> 真 and 假 这样结果就是为假这样的话数据库查询就无法查找出信息，就会执行else语句显示user.created</p>
+<p><code>tom&#39; and &#39;1&#39;=&#39;1</code> 真 and 真 这样结果就是为真数据库就会查询出结果，执行if语句回显user.exists</p>
+<p>所以这里我们可以根据消息回显的不同来执行sql语句</p>
+<p>我们来打一下断点分析一下,我们先来尝试假的 用户名为 tom’ and ‘1’=’2</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103083412031-16674356551801.png" alt="image-20221103083412031"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103083612496.png" alt="image-20221103083612496"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103084156134.png" alt="image-20221103084156134"></p>
+<p>可以看到拼接成功后直接来到了else这里</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103084314475.png" alt="image-20221103084314475"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103084417366.png" alt="image-20221103084417366"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103084501032.png" alt="image-20221103084501032"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103084541778.png" alt="image-20221103084541778"></p>
+<p>接下来尝试tom’ and ‘1’=’1 也就是真的情况 执行了if语句</p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103085051209.png" alt="image-20221103085051209"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103085235040.png" alt="image-20221103085235040"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103085353489.png" alt="image-20221103085353489"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103085442952.png" alt="image-20221103085442952"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103090522482.png" alt="image-20221103090522482"></p>
+<p><img src="/2022/11/22/sql%E6%B3%A8%E5%85%A5/image-20221103091041423.png" alt="image-20221103091041423"></p>
+<h3 id="修复建议"><a href="#修复建议" class="headerlink" title="修复建议"></a>修复建议</h3><p>1、参数传值</p>
+<p>程序员在书写SQL语言时，禁止将变量直接写入到SQL语句，必须通过设置相应的参数来传递相关的变量。从而抑制SQL注入。数据输入不能直接嵌入到查询语句中。同时要过滤输入的内容，过滤掉不安全的输入数据。或者采用参数传值的方式传递输入变量，这样可以最大程度防范SQL注入攻击。</p>
+<p>2、基础过滤与二次过滤</p>
+<p>SQL注入攻击前，入侵者通过修改参数提交and等特殊字符，判断是否存在漏洞，然后通过select、update等各种字符编写SQL注入语句。因此防范SQL注入要对用户输入进行检查，确保数据输入的安全性，在具体检查输入或提交的变量时，对于单引号、双引号、冒号等字符进行转换或者过滤，从而有效防止SQL注入。</p>
+<p>当然危险字符有很多，在获取用户输入提交参数时，首先要进行基础过滤，然后根据程序的功能及用户输入的可能性进行二次过滤，以确保系统的安全性。</p>
+</article><ul class="pager blog-pager"></ul><div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div><script src="//img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"> </script><script>var cloudTieConfig = {
+  url: document.location.href, 
+  sourceId: "",
+  productKey: "64d7f0abf9224be3bfdcc6cfb9b83fcf",
+  target: "cloud-tie-wrapper"
+};</script></div></div></div><footer><div class="container beautiful-jekyll-footer"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><ul class="list-inline text-center footer-links"><li><a title="Weibo"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-weibo"></i></span></a></li><li><a title="GitHub"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-github"></i></span></a></li><li><a title="RSS"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-rss"></i></span></a></li><li><a title="Twitter"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-twitter"></i></span></a></li><li><a title="Email me"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-envelope"></i></span></a></li></ul><p class="copyright text-muted">© FuYunlong • 2022 • <a href="mailto:undefined"></a>
+</p><p class="theme-by text-muted">Theme by
+<a target="_blank" rel="noopener" href="https://github.com/twoyao/beautiful-hexo">beautiful-hexo</a></p></div></div></div></footer><script src="//cdn.bootcss.com/jquery/1.11.2/jquery.min.js"></script><script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/js/main.js"></script><script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script><script>hljs.initHighlightingOnLoad();</script></body></html>
