@@ -6,7 +6,7 @@
   <link href="https://yunlongf.github.io/atom.xml" rel="self"/>
   
   <link href="https://yunlongf.github.io/"/>
-  <updated>2022-11-23T02:31:53.357Z</updated>
+  <updated>2022-11-23T02:37:55.325Z</updated>
   <id>https://yunlongf.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Webgoat代码审计之SSRF</title>
+    <link href="https://yunlongf.github.io/2022/11/23/SSRF/"/>
+    <id>https://yunlongf.github.io/2022/11/23/SSRF/</id>
+    <published>2022-11-23T02:38:11.140Z</published>
+    <updated>2022-11-23T02:37:55.325Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="SSRF-lesson1"><a href="#SSRF-lesson1" class="headerlink" title="SSRF-lesson1"></a>SSRF-lesson1</h3><p>题目要求我们去找到jerry的图片</p><p><img src="/2022/11/23/SSRF/image-20221119165031495.png" alt="image-20221119165031495"></p><p>发现请求了images下的tom图片，我们修改为jerry就可以了</p><p><img src="/2022/11/23/SSRF/image-20221109125920656.png" alt="image-20221109125920656"></p><p>看了看后端代码发现就是一个简单的判断语句</p><p><img src="/2022/11/23/SSRF/image-20221109130001817.png" alt="image-20221109130001817"></p><h3 id="SSRF-lesson2"><a href="#SSRF-lesson2" class="headerlink" title="SSRF-lesson2"></a>SSRF-lesson2</h3><p>第二题让我们请求他给出的网址，也是很简单直接换成url即可</p><p><img src="/2022/11/23/SSRF/image-20221119165338162.png" alt="image-20221119165338162"></p><p><img src="/2022/11/23/SSRF/image-20221109130312897.png" alt="image-20221109130312897"></p><p><img src="/2022/11/23/SSRF/image-20221109130351811.png" alt="image-20221109130351811"></p><p><img src="/2022/11/23/SSRF/image-20221109130429412.png" alt="image-20221109130429412"></p><h3 id="修复建议"><a href="#修复建议" class="headerlink" title="修复建议"></a>修复建议</h3><ol><li>限制请求的端口只能为Web端口，只允许访问HTTP和HTTPS的请求。</li><li>限制不能访问内网的IP，以防止对内网进行攻击。</li><li>屏蔽返回的详细信息。</li></ol>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h3 id=&quot;SSRF-lesson1&quot;&gt;&lt;a href=&quot;#SSRF-lesson1&quot; class=&quot;headerlink&quot; title=&quot;SSRF-lesson1&quot;&gt;&lt;/a&gt;SSRF-lesson1&lt;/h3&gt;&lt;p&gt;题目要求我们去找到jerry的图片&lt;/p&gt;
+&lt;p&gt;&lt;img </summary>
+      
+    
+    
+    
+    
+  </entry>
   
   <entry>
     <title>Webgoat代码审计之XXE</title>
