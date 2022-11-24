@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"><meta name="author" content="FuYunlong"><link rel="icon" href="/hexo.jpg"><title>PANGU</title><meta name="description" content=""><link rel="alternate" type="application/rss+xml" title="PANGU" href="/atom.xml"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css"><link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/highlight.css"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"><meta name="generator" content="Hexo 5.4.2"></head><body><nav class="navbar navbar-default navbar-fixed-top navbar-custom"><div class="container-fluid"><div class="navbar-header"><button type="button" data-toggle="collapse" data-target="#main-navbar" class="navbar-toggle"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button><a href="/" class="navbar-brand">PANGU</a></div><div id="main-navbar" class="collapse navbar-collapse"><ul class="nav navbar-nav navbar-right"><li><a href="/archives">Archive</a></li><li><a href="/about/">About</a></li></ul></div><div class="avatar-container"><div class="avatar-img-border"><a href="/"><img src="/hexo.jpg" class="avatar-img"></a></div></div></div></nav><header class="header-section"><div class="intro-header no-img"><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><div class="post-heading"><h1>Webgoat代码审计之密码重置</h1><p class="post-meta">Posted on Nov 24 2022</p></div></div></div></div></div></header><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><article role="main" class="blog-post"><h2 id="Security-questions"><a href="#Security-questions" class="headerlink" title="Security questions"></a>Security questions</h2><p>这题告诉了我们webgoat用户的安全问题，让我们找回别的用户tom或者admin</p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221123223237146.png" alt="image-20221123223237146"></p>
+<p>一开始还以为这里存在什么逻辑问题结果一看发现，其实这题就是爆破，爆破颜色就行了</p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105171243993.png" alt="image-20221105171243993"></p>
+<h2 id="Creating-the-password-reset-link"><a href="#Creating-the-password-reset-link" class="headerlink" title="Creating the password reset link"></a>Creating the password reset link</h2><p>说实话这道题目还是蛮有意思的，这里由于要用到邮件系统，所以我还需要打开webwolf，这是webgoat自带的邮件系统</p>
+<p>我们来看一下题目的意思，题目这里要求我们重置tom的密码，然后以tom的用户身份登录进去</p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221123223529256.png" alt="image-20221123223529256"></p>
+<p>我这里还是直接查看源码看一下可能存在的漏洞点在哪里</p>
+<p>我们首先进行密码的重置看一下请求，然后后端直接进行一个搜索</p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105173737186.png" alt="image-20221105173737186"></p>
+<p>定位到如下文件</p>
+<p>我们看到我们红框的那行代码，可以发现后端获取了我们请求头中host的数值，然后在发送邮件的过程中引入了host</p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105173214839.png" alt="image-20221105173214839"></p>
+<p>所以我们可以在这个host这里做文章</p>
+<p>我们先正常来看一下，先重置一下我们自己账号的密码</p>
+<p>在邮箱中我们收到了重置密码的邮件点击链接 ，发现url中最后的uuid就是我们当前的用户身份凭证</p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105173754068.png" alt="image-20221105173754068"></p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105173821885.png" alt="image-20221105173821885"></p>
+<p>所以说我们如果能劫持他人的uuid那么我们就可以重置他人的密码了</p>
+<p>所以大致流程如下：</p>
+<ol>
+<li>将host修改为我们自己可控的vps，这里我填了webwolf 也就是本地的邮件服务器，email还是<a href="mailto:&#x74;&#x6f;&#x6d;&#64;&#119;&#101;&#98;&#x67;&#111;&#97;&#116;&#x2d;&#99;&#108;&#111;&#117;&#x64;&#x2e;&#111;&#114;&#103;">&#x74;&#x6f;&#x6d;&#64;&#119;&#101;&#98;&#x67;&#111;&#97;&#116;&#x2d;&#99;&#108;&#111;&#117;&#x64;&#x2e;&#111;&#114;&#103;</a></li>
+</ol>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105173249477.png" alt="image-20221105173249477"></p>
+<ol start="2">
+<li>这样邮件就发送到了 tom 的邮箱中了，同时找回密码的链接变成了</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">localhost:<span class="number">9090</span>/WebGoat/PasswordReset/reset/reset-password/tom的uuid</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>然后到我们的邮件服务器中查看劫持到的uuid</li>
+</ol>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105173135055.png" alt="image-20221105173135055"></p>
+<p>然后通过替换uuid 实现密码重置</p>
+<p><img src="/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/image-20221105173358772.png" alt="image-20221105173358772"></p>
+<h4 id="修复建议"><a href="#修复建议" class="headerlink" title="修复建议"></a>修复建议</h4><p>修复起来其实很简单我们只需要固定我们的host就可以了，其实归根结底就是太相信用户的输入了，这也是很多安全问题存在的原因</p>
+</article><ul class="pager blog-pager"><li class="previous"><a href="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7%EF%BC%88JWT%EF%BC%89/" data-toggle="tooltip" data-placement="top" title="Webgoat代码审计之认证缺陷（JWT）">← Previous Post</a></li><li class="next"><a href="/2022/11/23/XSS/" data-toggle="tooltip" data-placement="top" title="Webgoat代码审计之XSS">Next Post →</a></li></ul><div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div><script src="//img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"> </script><script>var cloudTieConfig = {
+  url: document.location.href, 
+  sourceId: "",
+  productKey: "64d7f0abf9224be3bfdcc6cfb9b83fcf",
+  target: "cloud-tie-wrapper"
+};</script></div></div></div><footer><div class="container beautiful-jekyll-footer"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><ul class="list-inline text-center footer-links"><li><a title="Weibo"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-weibo"></i></span></a></li><li><a title="GitHub"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-github"></i></span></a></li><li><a title="RSS"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-rss"></i></span></a></li><li><a title="Twitter"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-twitter"></i></span></a></li><li><a title="Email me"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-envelope"></i></span></a></li></ul><p class="copyright text-muted">© FuYunlong • 2022 • <a href="mailto:undefined"></a>
+</p><p class="theme-by text-muted">Theme by
+<a target="_blank" rel="noopener" href="https://github.com/twoyao/beautiful-hexo">beautiful-hexo</a></p></div></div></div></footer><script src="//cdn.bootcss.com/jquery/1.11.2/jquery.min.js"></script><script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/js/main.js"></script><script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script><script>hljs.initHighlightingOnLoad();</script></body></html>

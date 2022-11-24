@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"><meta name="author" content="FuYunlong"><link rel="icon" href="/hexo.jpg"><title>PANGU</title><meta name="description" content=""><link rel="alternate" type="application/rss+xml" title="PANGU" href="/atom.xml"><link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css"><link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"><link rel="stylesheet" href="/css/main.css"><link rel="stylesheet" href="/css/highlight.css"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic"><link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"><meta name="generator" content="Hexo 5.4.2"></head><body><nav class="navbar navbar-default navbar-fixed-top navbar-custom"><div class="container-fluid"><div class="navbar-header"><button type="button" data-toggle="collapse" data-target="#main-navbar" class="navbar-toggle"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button><a href="/" class="navbar-brand">PANGU</a></div><div id="main-navbar" class="collapse navbar-collapse"><ul class="nav navbar-nav navbar-right"><li><a href="/archives">Archive</a></li><li><a href="/about/">About</a></li></ul></div><div class="avatar-container"><div class="avatar-img-border"><a href="/"><img src="/hexo.jpg" class="avatar-img"></a></div></div></div></nav><header class="header-section"><div class="intro-header no-img"><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><div class="post-heading"><h1>Webgoat代码审计之认证缺陷</h1><p class="post-meta">Posted on Nov 24 2022</p></div></div></div></div></div></header><div class="container"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><article role="main" class="blog-post"><h3 id="Authentication-Bypasses"><a href="#Authentication-Bypasses" class="headerlink" title="Authentication Bypasses"></a>Authentication Bypasses</h3><p>权限绕过，我们首先看到他给了一个样例，在进行安全校验对时候直接将对应请求包中的参数删掉就可以绕过了</p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221119171443591.png" alt="image-20221119171443591"></p>
+<p>当然我们的案例不可能和上面一样直接删除就好了，我们直接从源码层面来进行分析</p>
+<p>首先我们简单发一个请求，发现请求了后端的一个接口<code>/auth-bypass/verify-account</code>全局搜索接口名来到如下页面可以看到在接受请求之前会进行一个判断，判断我们的参数名中是否包含secQuestion这也就是为什么我们直接把参数删掉是不行的</p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221105152455453.png" alt="image-20221105152455453"></p>
+<p>下面那个判断是为了防止我们看源码进行作弊的 可以看到源码中含有我们的答案，如果我们输入的答案和源码中一样的话,like 就会为true（这里的like相当于标志符）同时返回让我们不要作弊的消息</p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221105152736349.png" alt="image-20221105152736349"></p>
+<p>继续往下来，核心的代码处是这里，如果这里if可以通过那么我们就可以绕过我们的校验了</p>
+<p>我们来看一下这个校验账户的功能</p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221119171744595.png" alt="image-20221119171744595"></p>
+<p>直接进行一个跟进</p>
+<p>发现有3个if，任意一个if符合条件了就会返回false</p>
+<p>我们来看一下这三个if</p>
+<p>第一个if 主要是判断了我们前端传过来的校验参数是否是两个</p>
+<p>第二个和第三个if都是判断数值是否相等和我们源码中的答案</p>
+<p>但是这里明显逻辑是有疏忽的，可以看到他获取的是 secQuestion0 和 secQuestion1 参数对应的数值进行一个比对</p>
+<p>那么如果我们传入的参数含有 secQuestion 但是又不是 secQuestion0 或 secQuestion1 不就可以对这个校验进行一个绕过了吗</p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221119172045359.png" alt="image-20221119172045359"></p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221105155040808.png" alt="image-20221105155040808"></p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221105155145878.png" alt="image-20221105155145878"></p>
+<p><img src="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/image-20221105155838752.png" alt="image-20221105155838752"></p>
+<p>首先上面的这个权限绕过我觉得可以运用在平时漏洞挖掘的过程中，有的时候的一些验证码校验很有可能删除就可以通过了，之前还无法理解后端是怎么写的，现在后端想想其实就是后端只获取了对应参数的数值类似<code>verify</code> ，所以我们在burp的过程中删去这个参数就可以绕过了</p>
+<p><code>username=test&amp;password=test&amp;verify=1233</code> 改成 <code>username=test&amp;password=test</code> 就可以了</p>
+<h3 id="修复建议"><a href="#修复建议" class="headerlink" title="修复建议"></a>修复建议</h3><ol>
+<li><p>我们后端限定前端传递过来的参数一定要含有verify，如果没有就进行报错或者显示不合法即可</p>
+</li>
+<li><p>当然利用签名也是一个很好的方法，签名能有效的防止传递过来的参数被修改，但是签名也有被破解的风险，所以最关键的还是后端要对传递过来的参数进行一个校验</p>
+</li>
+</ol>
+</article><ul class="pager blog-pager"><li class="next"><a href="/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7%EF%BC%88JWT%EF%BC%89/" data-toggle="tooltip" data-placement="top" title="Webgoat代码审计之认证缺陷（JWT）">Next Post →</a></li></ul><div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div><script src="//img1.cache.netease.com/f2e/tie/yun/sdk/loader.js"> </script><script>var cloudTieConfig = {
+  url: document.location.href, 
+  sourceId: "",
+  productKey: "64d7f0abf9224be3bfdcc6cfb9b83fcf",
+  target: "cloud-tie-wrapper"
+};</script></div></div></div><footer><div class="container beautiful-jekyll-footer"><div class="row"><div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1"><ul class="list-inline text-center footer-links"><li><a title="Weibo"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-weibo"></i></span></a></li><li><a title="GitHub"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-github"></i></span></a></li><li><a title="RSS"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-rss"></i></span></a></li><li><a title="Twitter"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-twitter"></i></span></a></li><li><a title="Email me"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-stack-1x fa-inverse fa-envelope"></i></span></a></li></ul><p class="copyright text-muted">© FuYunlong • 2022 • <a href="mailto:undefined"></a>
+</p><p class="theme-by text-muted">Theme by
+<a target="_blank" rel="noopener" href="https://github.com/twoyao/beautiful-hexo">beautiful-hexo</a></p></div></div></div></footer><script src="//cdn.bootcss.com/jquery/1.11.2/jquery.min.js"></script><script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/js/main.js"></script><script src="//cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script><script>hljs.initHighlightingOnLoad();</script></body></html>

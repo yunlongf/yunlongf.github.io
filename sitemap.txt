@@ -1,3 +1,7 @@
+https://yunlongf.github.io/2022/11/24/%E5%AF%86%E7%A0%81%E9%87%8D%E7%BD%AE/
+https://yunlongf.github.io/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7%EF%BC%88JWT%EF%BC%89/
+https://yunlongf.github.io/2022/11/24/%E8%AE%A4%E8%AF%81%E7%BC%BA%E9%99%B7/
+https://yunlongf.github.io/2022/11/23/XSS/
 https://yunlongf.github.io/2022/11/23/SSRF/
 https://yunlongf.github.io/2022/11/23/XXE/
 https://yunlongf.github.io/2022/11/22/sql%E6%B3%A8%E5%85%A5/
